@@ -34,3 +34,5 @@ build/
 
 ### ASI Logger ###
 task-tree/
+
+.DS_Store
