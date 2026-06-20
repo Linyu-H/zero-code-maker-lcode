@@ -1,5 +1,9 @@
-package common;
+package com.commul.ailcode.common;
 import com.commul.ailcode.exception.ErrorCode;
+import com.commul.ailcode.exception.ThrowUtils;
+import com.commul.ailcode.exception.BusinessException;
+import com.commul.ailcode.model.entity.User;
+import com.commul.ailcode.common.BaseResponse;
 
 public class ResultUtils {
 

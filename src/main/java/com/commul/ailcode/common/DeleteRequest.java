@@ -1,4 +1,4 @@
-package common;
+package com.commul.ailcode.common;
 
 import lombok.Data;
 
