@@ -1,11 +1,14 @@
 package com.commul.ailcode.service.impl;
 
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.lang.Validator;
 import cn.hutool.core.util.StrUtil;
 import com.commul.ailcode.exception.BusinessException;
 import com.commul.ailcode.exception.ErrorCode;
 import com.commul.ailcode.model.dto.UserLoginRequest;
+import com.commul.ailcode.model.dto.UserQueryRequest;
 import com.commul.ailcode.model.vo.LoginUserVO;
+import com.commul.ailcode.model.vo.UserVO;
 import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.spring.service.impl.ServiceImpl;
 import jakarta.servlet.http.HttpServletRequest;
@@ -20,9 +23,11 @@ import org.springframework.stereotype.Service;
 import com.commul.ailcode.exception.ThrowUtils;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 import static com.commul.ailcode.constant.UserConstant.USER_LOGIN_STATE;
 
@@ -174,9 +179,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>  implements U
 
     @Override
     public Boolean userLogout(HttpServletRequest request) {
-        // 判断用户是否登陆
-        User userLogin = (User) request.getSession().getAttribute(USER_LOGIN_STATE);
-        ThrowUtils.throwIf(userLogin == null || userLogin.getId() == null, ErrorCode.OPERATION_ERROR, "未登录，请先登录");
+        // 判断用户是否登陆（session 中存的是脱敏后的 LoginUserVO）
+        Object attr = request.getSession().getAttribute(USER_LOGIN_STATE);
+        if (!(attr instanceof LoginUserVO)) {
+            throw new BusinessException(ErrorCode.OPERATION_ERROR, "未登录，请先登录");
+        }
 
         // 移除登录态
         request.getSession().removeAttribute(USER_LOGIN_STATE);
@@ -184,21 +191,76 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>  implements U
     }
 
     @Override
-    public User getloginUser(HttpServletRequest request) {
-        // 1.判断用户是否登陆
-        User loginUser = (User) request.getSession().getAttribute(USER_LOGIN_STATE);
-        ThrowUtils.throwIf(loginUser == null || loginUser.getId() == null, ErrorCode.NOT_LOGIN_ERROR);
+    public User getLoginUser(HttpServletRequest request) {
+        // 1.判断用户是否登陆（session 中存的是脱敏后的 LoginUserVO）
+        Object attr = request.getSession().getAttribute(USER_LOGIN_STATE);
+        if (!(attr instanceof LoginUserVO)) {
+            throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR);
+        }
+        LoginUserVO loginUserVO = (LoginUserVO) attr;
+        Long userId = loginUserVO.getId();
+        ThrowUtils.throwIf(userId == null, ErrorCode.NOT_LOGIN_ERROR);
 
         // 2.从数据库查询当前用户信息
-        Long userId = loginUser.getId();
         QueryWrapper queryWrapper = new QueryWrapper()
                 .eq(User::getId, userId);
-        loginUser = this.mapper.selectOneByQuery(queryWrapper);
+        User loginUser = this.mapper.selectOneByQuery(queryWrapper);
         ThrowUtils.throwIf(loginUser == null || loginUser.getId() == null, ErrorCode.NOT_LOGIN_ERROR);
         return loginUser;
     }
 
+    @Override
+    public UserVO getUserVO(User user) {
+        // 校验参数
+        ThrowUtils.throwIf(user == null, ErrorCode.PARAMS_ERROR);
+
+        // 获取脱敏后的用户信息
+        UserVO userVO = new UserVO();
+        BeanUtils.copyProperties(user, userVO);
+        return userVO;
+    }
+
+    @Override
+    public List<UserVO> getUserVOList(List<User> userList) {
+        // 校验参数
+        if (CollUtil.isEmpty(userList)) {
+            return List.of();
+        }
+        return userList.stream()
+                .map(this::getUserVO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public QueryWrapper getQueryWrapper(UserQueryRequest userQueryRequest) {
+        if (userQueryRequest == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "请求参数为空");
+        }
+        Long id = userQueryRequest.getId();
+        String userAccount = userQueryRequest.getUserAccount();
+        String userName = userQueryRequest.getUserName();
+        String userProfile = userQueryRequest.getUserProfile();
+        String userEmail = userQueryRequest.getUserEmail();
+        String userRole = userQueryRequest.getUserRole();
+        String sortField = userQueryRequest.getSortField();
+        String sortOrder = userQueryRequest.getSortOrder();
+        QueryWrapper queryWrapper = QueryWrapper.create()
+                .eq("id", id, v -> v != null && v > 0)
+                .eq("userRole", userRole, StrUtil::isNotBlank)
+                .eq("userEmail", userEmail, StrUtil::isNotBlank)
+                .like("userAccount", userAccount, StrUtil::isNotBlank)
+                .like("userName", userName, StrUtil::isNotBlank)
+                .like("userProfile", userProfile, StrUtil::isNotBlank);
+        // sortField 非空时才追加排序，避免 ORDER BY 空列报错
+        if (StrUtil.isNotBlank(sortField)) {
+            queryWrapper = queryWrapper.orderBy(sortField, "ascend".equals(sortOrder));
+        }
+        return queryWrapper;
+    }
+
+
     // 检验验证码
+    @Override
     public Boolean checkCode(String userVerifyMail, String userCode, HttpServletRequest request){
         // 校验参数
         ThrowUtils.throwIf(StrUtil.hasBlank(userVerifyMail, userCode), ErrorCode.PARAMS_ERROR, "参数为空");
