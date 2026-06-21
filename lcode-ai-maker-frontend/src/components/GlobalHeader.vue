@@ -2,7 +2,7 @@
   <a-layout-header class="header">
     <div class="header-content">
       <div class="logo-section" @click="handleLogoClick">
-        <img src="@/assets/code maker.png" alt="logo" class="logo-img"/>
+        <img src="@/assets/code maker.png" alt="logo" class="logo-img" />
         <span class="site-title">Lcode Maker</span>
       </div>
       <a-menu
@@ -13,33 +13,117 @@
         @click="handleMenuClick"
       />
       <div class="user-section">
-        <a-button type="primary">登录</a-button>
+        <a-dropdown v-if="loginUserStore.loginUser.id" :trigger="['click']">
+          <div class="user-trigger" @click.prevent>
+            <a-avatar :size="32" :src="loginUserStore.loginUser.userAvatar" />
+            <span class="user-name">{{ loginUserStore.loginUser.userName }}</span>
+          </div>
+          <template #overlay>
+            <a-menu @click="handleUserMenuClick">
+              <a-menu-item key="profile">
+                <EditOutlined /> 修改个人信息
+              </a-menu-item>
+              <a-menu-item key="logout">
+                <span class="logout-item"><LogoutOutlined /> 退出登录</span>
+              </a-menu-item>
+            </a-menu>
+          </template>
+        </a-dropdown>
+        <div v-else>
+          <a-button type="primary" @click="router.push('/user/login')">登录</a-button>
+        </div>
       </div>
     </div>
+    <EditProfileModal
+      v-model:visible="editVisible"
+      :user="loginUserStore.loginUser"
+      @success="handleEditSuccess"
+    />
   </a-layout-header>
 </template>
 
 <script setup lang="ts">
-import {ref} from 'vue'
-import {useRouter} from 'vue-router'
-import type {MenuProps} from 'ant-design-vue'
+import { computed, h, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { message, Modal } from 'ant-design-vue'
+import { EditOutlined, HomeOutlined, LogoutOutlined } from '@ant-design/icons-vue'
+import type { MenuProps } from 'ant-design-vue'
+import { useLoginUserStore } from '@/stores/loginUser.ts'
+import { userLogout } from '@/api/userController.ts'
+import EditProfileModal from '@/components/EditProfileModal.vue'
 
+// 获取登陆用户信息
+const loginUserStore = useLoginUserStore()
 const router = useRouter()
-const selectedKeys = ref<string[]>(['home'])
-
-const menuItems: MenuProps['items'] = [
+const selectedKeys = ref<string[]>(['/'])
+const editVisible = ref(false)
+// 菜单配置项
+// 菜单配置项
+const originItems = [
   {
-    key: 'home',
-    label: '首页',
+    key: '/',
+    icon: () => h(HomeOutlined),
+    label: '主页',
+    title: '主页',
+  },
+  {
+    key: '/admin/userManage',
+    label: '用户管理',
+    title: '用户管理',
   },
 ]
 
+// 过滤菜单项
+const filterMenus = (menus = [] as MenuProps['items']) => {
+  return menus?.filter((menu) => {
+    const menuKey = menu?.key as string
+    if (menuKey?.startsWith('/admin')) {
+      const loginUser = loginUserStore.loginUser
+      if (!loginUser || loginUser.userRole !== 'admin') {
+        return false
+      }
+    }
+    return true
+  })
+}
+
+// 展示在菜单的路由数组
+const menuItems = computed<MenuProps['items']>(() => filterMenus(originItems))
+
 const handleMenuClick: MenuProps['onClick'] = (e) => {
-  router.push({name: e.key as string})
+  router.push(e.key as string)
 }
 
 const handleLogoClick = () => {
-  router.push({name: 'home'})
+  router.push('/')
+}
+
+const handleLogout = async () => {
+  try {
+    await userLogout()
+  } catch (e) {
+    // 即使接口失败也继续清理本地状态
+  }
+  loginUserStore.setLoginUser({ userName: '未登录' })
+  message.success('已退出登录')
+  router.replace('/user/login')
+}
+
+const handleUserMenuClick: MenuProps['onClick'] = (e) => {
+  if (e.key === 'logout') {
+    Modal.confirm({
+      title: '确认退出登录?',
+      okText: '退出',
+      cancelText: '取消',
+      onOk: handleLogout,
+    })
+  } else if (e.key === 'profile') {
+    editVisible.value = true
+  }
+}
+
+const handleEditSuccess = (updated: API.LoginUserVO) => {
+  loginUserStore.setLoginUser(updated)
 }
 </script>
 
@@ -126,48 +210,85 @@ const handleLogoClick = () => {
 .menu {
   flex: 1;
   border: none;
-  line-height: 72px;
+  line-height: 1;
   margin: 0 32px;
   min-width: 0;
   background: transparent;
 }
 
 .menu :deep(.ant-menu-item) {
+  height: 40px;
+  line-height: 40px;
+  margin: 0 4px !important;
+  padding: 0 18px !important;
+  font-size: 15px;
   font-weight: 500;
-  border-radius: 8px;
-  transition: all 0.2s;
+  color: #4b5563;
+  border-radius: 20px;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.menu :deep(.ant-menu-item .anticon) {
+  font-size: 16px;
+  margin-right: 6px;
 }
 
 .menu :deep(.ant-menu-item:hover) {
-  background: transparent;
-  color: #1890ff;
+  color: #4f46e5;
+  background: rgba(79, 70, 229, 0.08) !important;
 }
 
 .menu :deep(.ant-menu-item-selected) {
-  background: transparent;
-  color: #1890ff;
+  color: #fff !important;
   font-weight: 600;
-  position: relative;
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%) !important;
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+}
+
+.menu :deep(.ant-menu-item-selected:hover) {
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%) !important;
 }
 
 .menu :deep(.ant-menu-item-selected::after) {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 24px;
-  height: 3px;
-  background: linear-gradient(135deg, #1890ff 0%, #096dd9 100%);
-  border-radius: 2px 2px 0 0;
+  display: none;
 }
 
 .user-section {
   flex-shrink: 0;
 }
 
+.user-trigger {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px 6px 6px;
+  border-radius: 22px;
+  cursor: pointer;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.user-trigger:hover {
+  transform: translateY(-2px);
+}
+
+.user-trigger:active {
+  transform: translateY(0);
+}
+
+.user-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  white-space: nowrap;
+}
+
+.logout-item {
+  color: #ef4444;
+}
+
 .user-section :deep(.ant-btn-primary) {
   height: 40px;
+  line-height: 1;
   padding: 0 24px;
   border-radius: 20px;
   font-weight: 600;
@@ -208,8 +329,12 @@ const handleLogoClick = () => {
   }
 
   .menu {
-    margin: 0 16px;
-    line-height: 64px;
+    margin: 0 12px;
+  }
+
+  .menu :deep(.ant-menu-item) {
+    padding: 0 14px !important;
+    font-size: 14px;
   }
 
   .user-section :deep(.ant-btn-primary) {

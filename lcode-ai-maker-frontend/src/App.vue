@@ -1,9 +1,16 @@
 <script setup lang="ts">
+import { useRoute } from 'vue-router'
 import BasicLayout from '@/layouts/BasicLayout.vue'
+import { useLoginUserStore } from '@/stores/loginUser.ts'
+
+const route = useRoute()
+const loginUserStore = useLoginUserStore()
+loginUserStore.fetchLoginUser()
 </script>
 
 <template>
-  <BasicLayout/>
+  <router-view v-if="route.meta.hideLayout" />
+  <BasicLayout v-else />
 </template>
 
 <style>

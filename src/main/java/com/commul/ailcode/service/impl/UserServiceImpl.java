@@ -247,7 +247,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>  implements U
         QueryWrapper queryWrapper = QueryWrapper.create()
                 .eq("id", id, v -> v != null && v > 0)
                 .eq("userRole", userRole, StrUtil::isNotBlank)
-                .eq("userEmail", userEmail, StrUtil::isNotBlank)
+                .like("userEmail", userEmail, StrUtil::isNotBlank)
                 .like("userAccount", userAccount, StrUtil::isNotBlank)
                 .like("userName", userName, StrUtil::isNotBlank)
                 .like("userProfile", userProfile, StrUtil::isNotBlank);

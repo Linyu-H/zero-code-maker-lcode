@@ -7,6 +7,10 @@ import com.commul.ailcode.common.BaseResponse;
 import com.commul.ailcode.common.ResultUtils;
 import com.commul.ailcode.exception.BusinessException;
 import com.commul.ailcode.exception.ErrorCode;
+import com.commul.ailcode.exception.ThrowUtils;
+import com.commul.ailcode.service.UserService;
+import com.mybatisflex.core.query.QueryWrapper;
+import jakarta.annotation.Resource;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -27,6 +31,9 @@ import java.util.concurrent.ConcurrentHashMap;
 @RestController
 @RequestMapping("/mail")
 public class MailController {
+
+    @Resource
+    private UserService userService;
 
     @Autowired
     private JavaMailSender sender; // 引入Spring Mail依赖后，会自动装配到IOC容器。用来发送邮件
@@ -58,6 +65,10 @@ public class MailController {
         if (StrUtil.isBlank(mail) || !Validator.isEmail(mail)) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "邮箱格式不正确");
         }
+
+        // 判断邮箱是否注册
+        long mailCount = userService.getMapper().selectCountByQuery(new QueryWrapper().eq("userEmail", mail));
+        ThrowUtils.throwIf(mailCount > 0, ErrorCode.OPERATION_ERROR, "该邮箱已注册");
 
         // 冷却控制：同一邮箱 60s 内禁止重发
         long now = System.currentTimeMillis();
