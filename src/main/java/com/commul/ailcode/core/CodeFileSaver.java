@@ -11,6 +11,8 @@ import java.io.File;
 /**
  * 文件保存服务
  */
+
+@Deprecated
 public class CodeFileSaver {
 
     // 文件保存目录
