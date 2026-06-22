@@ -3,6 +3,7 @@ package com.commul.ailcode.ai;
 import com.commul.ailcode.ai.model.HtmlCodeResult;
 import com.commul.ailcode.ai.model.MultiFileCodeResult;
 import dev.langchain4j.service.SystemMessage;
+import reactor.core.publisher.Flux;
 
 public interface AiCodeGeneratorService {
 
@@ -14,6 +15,24 @@ public interface AiCodeGeneratorService {
      */
     @SystemMessage(fromResource = "prompt/OneHtml.md")
     HtmlCodeResult generateHtmlCode(String prompt);
+
+    /**
+     * 根据提示生成html代码
+     *
+     * @param prompt 提示
+     * @return 代码
+     */
+    @SystemMessage(fromResource = "prompt/OneHtml.md")
+    Flux<String> generateHtmlCodeStream(String prompt);
+
+    /**
+     * 根据提示生成多文件代码
+     *
+     * @param prompt 提示
+     * @return 代码
+     */
+    @SystemMessage(fromResource = "prompt/MoreFile.md")
+    Flux<String> generateMultiFileCodeStream(String prompt);
 
     /**
      * 根据提示生成多文件代码
