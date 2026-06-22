@@ -1,5 +1,7 @@
 package com.commul.ailcode.ai;
 
+import com.commul.ailcode.ai.model.HtmlCodeResult;
+import com.commul.ailcode.ai.model.MultiFileCodeResult;
 import jakarta.annotation.Resource;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -14,14 +16,14 @@ class AiCodeGeneratorServiceTest {
 
     @Test
     void generateHtmlCode() {
-        String result = aiCodeGeneratorService.generateHtmlCode("做一个lcode程序员的博客，不超过20行");
+        HtmlCodeResult result = aiCodeGeneratorService.generateHtmlCode("做一个lcode程序员的博客，不超过20行");
         Assertions.assertNotNull(result);
 
     }
 
     @Test
     void generateMultiFileCode() {
-        String result = aiCodeGeneratorService.generateMultiFileCode("做一个lcode程序员的留言板，不超过50行");
+        MultiFileCodeResult result = aiCodeGeneratorService.generateMultiFileCode("做一个lcode程序员的留言板，不超过20行");
         Assertions.assertNotNull(result);
     }
 }

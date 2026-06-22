@@ -1,5 +1,7 @@
 package com.commul.ailcode.ai;
 
+import com.commul.ailcode.ai.model.HtmlCodeResult;
+import com.commul.ailcode.ai.model.MultiFileCodeResult;
 import dev.langchain4j.service.SystemMessage;
 
 public interface AiCodeGeneratorService {
@@ -11,7 +13,7 @@ public interface AiCodeGeneratorService {
      * @return 代码
      */
     @SystemMessage(fromResource = "prompt/OneHtml.md")
-    String generateHtmlCode(String prompt);
+    HtmlCodeResult generateHtmlCode(String prompt);
 
     /**
      * 根据提示生成多文件代码
@@ -20,5 +22,5 @@ public interface AiCodeGeneratorService {
      * @return 代码
      */
     @SystemMessage(fromResource = "prompt/MoreFile.md")
-    String generateMultiFileCode(String prompt);
+    MultiFileCodeResult generateMultiFileCode(String prompt);
 }
