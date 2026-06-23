@@ -1,6 +1,7 @@
 package com.commul.ailcode.controller;
 
 import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.json.JSONUtil;
 import com.commul.ailcode.annotation.AuthCheck;
 import com.commul.ailcode.common.BaseResponse;
 import com.commul.ailcode.common.DeleteRequest;
@@ -22,13 +23,15 @@ import com.mybatisflex.core.paginate.Page;
 import com.mybatisflex.core.query.QueryWrapper;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.MediaType;
+import org.springframework.http.codec.ServerSentEvent;
+import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
+import java.awt.*;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 应用 控制层。
@@ -49,6 +52,34 @@ public class AppController {
 
     @Resource
     private UserService userService;
+
+    @GetMapping(value = "/chat/gen/code", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public Flux<ServerSentEvent<String>> chatToGenCode (@RequestParam Long appId, @RequestParam String message, HttpServletRequest request) {
+        // 1.校验参数
+        ThrowUtils.throwIf(message == null || message.length() < 1, ErrorCode.PARAMS_ERROR, "请输入合理的提示词，不要开玩笑，谢谢");
+        ThrowUtils.throwIf(appId == null || appId <= 0, ErrorCode.PARAMS_ERROR, "请选择一个有效的应用");
+
+        // 获取当前登录用户
+        User loginUser = userService.getLoginUser(request);
+
+        // 调用服务生成代码（SSE流式返回 ）
+        Flux<String> contextFlux = appService.chatToGenCode(appId, message, loginUser);
+        return contextFlux
+                .map(context -> {
+                    Map<String, String> wrapper = Map.of("l", context);
+                    String jsonStr = JSONUtil.toJsonStr(wrapper);
+                    return ServerSentEvent.<String>builder()
+                            .data(jsonStr)
+                            .build();
+                })
+                .concatWith(Mono.just(
+                        // 发送结束事件
+                        ServerSentEvent.<String>builder()
+                                .event("finish")
+                                .data("")
+                                .build()
+                ));
+    }
 
     // region 用户端接口
 

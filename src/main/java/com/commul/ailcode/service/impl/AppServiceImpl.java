@@ -3,6 +3,7 @@ package com.commul.ailcode.service.impl;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
+import com.commul.ailcode.core.AiCodeGeneratorFacade;
 import com.commul.ailcode.exception.BusinessException;
 import com.commul.ailcode.exception.ErrorCode;
 import com.commul.ailcode.exception.ThrowUtils;
@@ -12,12 +13,15 @@ import com.commul.ailcode.model.dto.app.AppQueryRequest;
 import com.commul.ailcode.model.dto.app.AppUpdateRequest;
 import com.commul.ailcode.model.entity.App;
 import com.commul.ailcode.model.entity.User;
+import com.commul.ailcode.model.enums.CodeGenTypeEnum;
 import com.commul.ailcode.model.vo.AppVO;
 import com.commul.ailcode.service.AppService;
 import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.spring.service.impl.ServiceImpl;
+import jakarta.annotation.Resource;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -31,6 +35,9 @@ import java.util.stream.Collectors;
  */
 @Service
 public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppService {
+
+    @Resource
+    private AiCodeGeneratorFacade aiCodeGeneratorFacade;
 
     @Override
     public Long addApp(AppAddRequest appAddRequest, User loginUser) {
@@ -166,5 +173,27 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
                 .like("appName", appName, StrUtil::isNotBlank)
                 .orderBy("priority", false)
                 .orderBy("createTime", false);
+    }
+
+    @Override
+    public Flux<String> chatToGenCode(Long appId, String prompt, User loginUser) {
+
+        // 1. 参数校验
+        ThrowUtils.throwIf(appId == null || appId <= 0, ErrorCode.PARAMS_ERROR, "应用ID错误");
+        ThrowUtils.throwIf(prompt == null || prompt.length() < 5, ErrorCode.PARAMS_ERROR, "请输入至少5个字符");
+
+        // 2.查询应用信息
+        App app = this.getById(appId);
+        ThrowUtils.throwIf(app == null, ErrorCode.NOT_FOUND_ERROR, "应用不存在");
+
+        // 3.权限校验，仅本人可以和自己的应用对话
+        ThrowUtils.throwIf(!Objects.equals(app.getUserId(), loginUser.getId()), ErrorCode.NO_AUTH_ERROR, "无权限访问");
+
+        // 4.获取代码生成类型
+        CodeGenTypeEnum codeGenType = CodeGenTypeEnum.getEnumByValue(app.getCodeGenType());
+        ThrowUtils.throwIf(codeGenType == null, ErrorCode.PARAMS_ERROR, "代码生成类型错误");
+
+        // 5.调用代码生成器
+        return aiCodeGeneratorFacade.generateAndSaveCodeStream(prompt, codeGenType, appId);
     }
 }

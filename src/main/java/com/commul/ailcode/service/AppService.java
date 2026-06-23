@@ -8,6 +8,7 @@ import com.commul.ailcode.model.entity.User;
 import com.commul.ailcode.model.vo.AppVO;
 import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.core.service.IService;
+import reactor.core.publisher.Flux;
 
 import java.util.List;
 
@@ -85,4 +86,14 @@ public interface AppService extends IService<App> {
      * @return 查询条件
      */
     QueryWrapper getFeaturedQueryWrapper(AppQueryRequest appQueryRequest);
+
+    /**
+     * 获取应用流式生成代码
+     *
+     * @param appId      应用 id
+     * @param prompt     提示词
+     * @param loginUser  当前登录用户
+     * @return 流式响应
+     */
+    Flux<String> chatToGenCode(Long appId, String prompt, User loginUser);
 }
