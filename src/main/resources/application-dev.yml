@@ -1,0 +1,65 @@
+spring:
+  application:
+    name: ai-lcode
+  # mysql
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://149.88.72.233:3306/ai_lcode_maker
+    username: root
+    password: lyh20041113lyh
+  mail:
+    host: smtp.qq.com
+    port: 465
+    username: 3170047405@qq.com
+    password: dsaepfwkktijdgdd
+    default-encoding: utf-8
+    properties:
+      mail:
+        smtp:
+          auth: true
+          ssl:
+            enable: true
+          socketFactory:
+            class: javax.net.ssl.SSLSocketFactory
+            port: 465
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+# springdoc-openapi
+springdoc:
+  group-configs:
+    - group: 'default'
+      paths-to-match: '/**'
+      packages-to-scan: com.commul.ailcode.controller
+# knife4j
+knife4j:
+  enable: true
+  setting:
+    language: zh_cn
+
+# AI（阿里云百炼 DashScope，OpenAI 兼容接口）
+langchain4j:
+  open-ai:
+    chat-model:
+      # 阿里云百炼 OpenAI 兼容模式入口
+      base-url: https://dashscope.aliyuncs.com/compatible-mode/v1
+      # 在阿里云百炼控制台获取的 API Key
+      api-key: sk-feb0ba4798804f73a6916bfd8b723009
+      # 通义千问模型，可按需换成 qwen-max / qwen-turbo / qwen-plus
+      model-name: deepseek-v3
+      log-requests: true
+      log-responses: true
+      max-tokens: 8192
+      strict-json-schema: true
+      response-format: json_object
+    streaming-chat-model:
+      # 阿里云百炼 OpenAI 兼容模式入口
+      base-url: https://dashscope.aliyuncs.com/compatible-mode/v1
+      # 在阿里云百炼控制台获取的 API Key
+      api-key: sk-feb0ba4798804f73a6916bfd8b723009
+      # 通义千问模型，可按需换成 qwen-max / qwen-turbo / qwen-plus
+      model-name: deepseek-v3
+      log-requests: true
+      log-responses: true
+      max-tokens: 8192
