@@ -1,4 +1,4 @@
-package com.commul.ailcode.model.dto;
+package com.commul.ailcode.model.dto.user;
 
 import lombok.Data;
 

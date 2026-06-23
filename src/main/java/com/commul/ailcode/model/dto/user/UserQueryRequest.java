@@ -1,7 +1,6 @@
-package com.commul.ailcode.model.dto;
+package com.commul.ailcode.model.dto.user;
 
 import com.commul.ailcode.common.PageRequest;
-import jakarta.validation.constraints.Email;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 

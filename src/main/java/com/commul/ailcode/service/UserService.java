@@ -1,13 +1,13 @@
 package com.commul.ailcode.service;
 
-import com.commul.ailcode.model.dto.UserLoginRequest;
-import com.commul.ailcode.model.dto.UserQueryRequest;
+import com.commul.ailcode.model.dto.user.UserLoginRequest;
+import com.commul.ailcode.model.dto.user.UserQueryRequest;
 import com.commul.ailcode.model.vo.LoginUserVO;
 import com.commul.ailcode.model.vo.UserVO;
 import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.core.service.IService;
 import jakarta.servlet.http.HttpServletRequest;
-import com.commul.ailcode.model.dto.UserRegisterRequest;
+import com.commul.ailcode.model.dto.user.UserRegisterRequest;
 import com.commul.ailcode.model.entity.User;
 
 import java.util.List;
